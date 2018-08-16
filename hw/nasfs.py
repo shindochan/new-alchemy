@@ -11,7 +11,7 @@ import uuid
 ================================================================================
 Assignment: Simple storage server
 Clone this wiki locally
-	 Clone in Desktop
+         Clone in Desktop
 Description
 
 This is an API specification for a simple HTTP-based multi-user file
@@ -157,7 +157,8 @@ arifications;:
 interested on any thoughts written or in person on how you'd architect
 this differently for service like:
   100k users 1m files 10 files upload concurrent peak   50 files download peak
-  20m users  100m files 1k files upload concurrent peak   10k files download peak
+  20m users  100m files 1k files upload concurrent peak   10k files
+download peak
 
 2. security - don't work about wiring in HTTPS, though it's assumed
 that's how we'd deploy it.  Do think about user A can't access user
@@ -175,7 +176,8 @@ talk to it if you'd like.  All good.
 Responses to clarifications:
 1. Scale--implemented as toy scale, using python objects instead of a
    DB. This also means the file server has no Durability, and the
-   Atomicity, Consistency and Isolation are due in part to the Global Interpreter
+   Atomicity, Consistency and Isolation are due in part to the Global
+Interpreter
    Lock (this is written for Python 2.7.10).
 
       The first scaling goal (  100k users 1m files 10 files upload
@@ -254,6 +256,7 @@ Responses to clarifications:
 users = {}                      # dict of registered usernames and passwords
 sessions = {}                   # dict of current user sessions, by sessionid
 
+
 class user:
     """
     Holds user name, password, and a dictionary of file names as known to the
@@ -289,7 +292,8 @@ class user:
 
     def delete_file(self, fn):
         """
-        Returns the file in the underlying file system to delete, if any, or None.
+        Returns the file in the underlying file system to delete, if
+        any, or None.
         """
         filelst = self.files.get(fn, None)
         if filelst:
@@ -307,9 +311,12 @@ class RequestHandler(BaseHTTPRequestHandler):
     def safe_print(self, data):
         """
         For safe logging to the terminal. The only control characters that are
-        passed are \\r and \\n, all others are ^ escaped. Bytes with the MSB set
-        are printed in hex with the \\xhh escape sequence. Notice that this means
-        you cannot tell carat followed by a capital letter from a control character.
+        passed are \\r and \\n, all others are ^ escaped. Bytes with
+        the MSB set
+        are printed in hex with the \\xhh escape sequence. Notice that
+        this means
+        you cannot tell carat followed by a capital letter from a
+        control character.
         """
         bai = bytearray(data)
         bao = bytearray(0)      # zero length to start
@@ -326,11 +333,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                 bao.append(63)  # ?
             else:
                 bao.append(92)    # backslash
-                bao.append(120)    #  x
-                hexy = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100,
-                        101, 102]
-                bao.append(hexy[(x>>4) & 0xf])
-                bao.append(hexy[x&0xf])
+                bao.append(120)    # x
+                hexy = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97,
+                        98, 99, 100, 101, 102]
+                bao.append(hexy[(x >> 4) & 0xf])
+                bao.append(hexy[x & 0xf])
         print str(bao)
 
     def print_request_start(self, command):
@@ -357,9 +364,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         username = jsonData.get(u"username", None) if data else None
         password = jsonData.get(u"password", None) if data else None
 
-        # validate username at least 3 and no more than 20 alphanumeric characters
+        # validate username at least 3 and no more than 20
+        # alphanumeric characters
         if username is None:
-            errmsg.append("Must supply a username between 3 and 20 characters.")
+            errmsg.append("Must supply a username between 3 & 20 characters.")
         elif len(username) < 3:
             errmsg.append("username must be at least 3 characters.")
         elif len(username) > 20:
@@ -371,7 +379,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         # validate password is at least 8 characters
         if password is None:
-            errmsg.append("You must supply a password of at least 8 characters.")
+            errorMsg = "You must supply a password of at least 8 characters."
+            errmsg.append(errorMsg)
         elif len(password) < 8:
             errmsg.append("Password must be at least 8 characters.")
         if len(errmsg) > 0:
@@ -453,7 +462,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             # Is list command. Nore that the server won't send data to the
             # client unless it stars with a newline. Feature or bug,,,
             jsonData = "\n" + json.dumps(thisUser.files.keys())
-            self.print_request_end("GET", 200, data=jsonData[:80], response="OK")
+            self.print_request_end("GET", 200, data=jsonData[:80],
+                                   response="OK")
             self.send_response(200, "OK")
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", len(jsonData))
@@ -469,7 +479,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         stbuf = os.stat(filenm)
         length = stbuf[stat.ST_SIZE]
-        self.print_request_end("GET", 200, data="<%s bytes>"%length)
+        self.print_request_end("GET", 200, data="<%s bytes>" % length)
         self.send_response(200, "OK")
         self.send_header("Content-Length", length)
         # TODO mick -- This loop will run us out of memory on large file
@@ -480,7 +490,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         self.print_request_start("PUT")
-        # TODO mick--extract common subexpressions with do_GET, particularly the
+        # TODO mick--extract common subexpressions with do_GET,
+        # particularly the
         # logged in check.
         session = self.headers.getheaders("X-Session")
         session = session[0] if session else None
@@ -538,6 +549,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.print_request_end("DELETE", 204, data=self.path)
         self.send_response(204)
 
+
 def main():
     parser = argparse.ArgumentParser(description="Simple storage server")
     parser.add_argument("serverPort", type=int, nargs='?', default=8080)
@@ -550,4 +562,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
